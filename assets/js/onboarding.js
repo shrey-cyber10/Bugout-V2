@@ -1,563 +1,370 @@
-// Interactive Onboarding System for BUGOUT
-class OnboardingSystem {
+// BUGOUT Student Help Experience
+// Keeps the proven backend/features, but presents a much simpler student-first product.
+class StudentHelpExperience {
     constructor() {
-        this.currentStep = 0;
-        this.totalSteps = 8;
-        this.isOnboarding = false;
-        this.userProgress = JSON.parse(localStorage.getItem('bugout_onboarding') || '{}');
         this.init();
     }
 
     init() {
-        // Check if user is new or needs onboarding
-        if (!this.userProgress.completed) {
-            this.showWelcome();
+        document.body.classList.add('student-help-product');
+        this.updateBranding();
+        this.simplifyNavigation();
+        this.buildDashboard();
+        this.simplifyTutor();
+        this.simplifyCoding();
+        this.simplifyCommunity();
+        this.watchUserState();
+        this.bindKeyboardShortcuts();
+    }
+
+    updateBranding() {
+        document.title = 'BUGOUT — Student Help, All in One Place';
+        const subtitle = document.querySelector('.logo-subtitle');
+        if (subtitle) subtitle.textContent = 'student help network';
+        const logoText = document.querySelector('.logo-text');
+        if (logoText) logoText.classList.add('bugout-glitch-logo');
+    }
+
+    simplifyNavigation() {
+        this.renameNav('homeNavBtn', 'Home', 'home');
+        this.renameNav('teacherNavBtn', 'AI Tutor', 'tutor');
+        this.renameNav('arenaNavBtn', 'Coding', 'coding');
+
+        ['missionsNavBtn', 'careerNavBtn', 'dashboardNavBtn', 'mentorNavBtn', 'analyzerNavBtn', 'collabNavBtn', 'bookmarkNavBtn']
+            .forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+
+        const nav = document.querySelector('.nav-center');
+        if (nav && !document.getElementById('communityNavBtn')) {
+            const community = document.createElement('button');
+            community.className = 'nav-btn os-nav-btn student-community-nav';
+            community.id = 'communityNavBtn';
+            community.textContent = 'Community';
+            community.addEventListener('click', () => this.openCommunity());
+            nav.appendChild(community);
+        }
+
+        const postBtn = document.getElementById('postBtn');
+        if (postBtn) postBtn.textContent = 'Ask Community';
+
+        const leaderboardButton = [...document.querySelectorAll('.nav-right .btn')]
+            .find(button => /leaderboard/i.test(button.textContent || ''));
+        if (leaderboardButton) {
+            leaderboardButton.textContent = 'Top Helpers';
+            leaderboardButton.classList.add('top-helpers-btn');
         }
     }
 
-    showWelcome() {
-        const overlay = this.createOverlay();
-        const modal = this.createModal();
-        
-        modal.innerHTML = `
-            <div class="welcome-screen">
-                <div class="welcome-emoji">🐛</div>
-                <h2 class="welcome-title">Welcome to BUGOUT!</h2>
-                <p class="welcome-subtitle">
-                    Let's get you started with a quick tour of the most powerful bug-solving platform. 
-                    I'll show you how to post problems, find solutions, and connect with the community!
-                </p>
-                <div class="onboarding-actions">
-                    <button class="onboarding-btn" onclick="onboarding.startTour()">
-                        🚀 Start Tour
+    renameNav(id, text, mode) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+        el.removeAttribute('data-pillar');
+        el.dataset.studentMode = mode;
+    }
+
+    buildDashboard() {
+        const home = document.getElementById('homePage');
+        const root = home?.querySelector('.bugout-os');
+        if (!root || document.getElementById('studentHelpDashboard')) return;
+
+        root.querySelectorAll(':scope > .mc-hero, :scope > .os-pillars, :scope > .mc-grid, :scope > .xp-dimensions')
+            .forEach(section => section.classList.add('legacy-os-hidden'));
+
+        const community = root.querySelector('.community-exchange');
+        const dashboard = document.createElement('section');
+        dashboard.id = 'studentHelpDashboard';
+        dashboard.className = 'student-help-dashboard';
+        dashboard.innerHTML = `
+            <div class="student-cyber-orb orb-a" aria-hidden="true"></div>
+            <div class="student-cyber-orb orb-b" aria-hidden="true"></div>
+
+            <section class="student-help-hero">
+                <div class="student-help-kicker">
+                    <span>BUGOUT // STUDENT HELP NETWORK</span>
+                    <span class="student-ai-status"><i></i> AI ONLINE</span>
+                </div>
+                <div class="student-help-hero-grid">
+                    <div class="student-help-copy">
+                        <p class="student-greeting" id="studentGreeting">HEY, STUDENT.</p>
+                        <h1>What are you <span>stuck</span> on?</h1>
+                        <p class="student-help-lead">Studies, coding, assignments, exams or college life — ask once and let BUGOUT help you move forward.</p>
+                    </div>
+                    <div class="student-signal-card" aria-hidden="true">
+                        <span class="signal-label">HELP SIGNAL</span>
+                        <div class="signal-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                        <strong>READY</strong>
+                        <small>AI + COMMUNITY</small>
+                    </div>
+                </div>
+
+                <div class="student-ask-shell">
+                    <div class="student-ask-topline">
+                        <span>ASK BUGOUT</span>
+                        <kbd>CTRL + K</kbd>
+                    </div>
+                    <textarea id="studentHelpAskInput" rows="2" placeholder="Ask anything — explain a topic, solve a doubt, fix code, prepare for an exam..."></textarea>
+                    <div class="student-ask-actions">
+                        <div class="student-input-tools">
+                            <button type="button" onclick="studentHelpUpload()" title="Upload notes or image">＋ Upload</button>
+                            <button type="button" onclick="studentHelpCode()" title="Open coding help">&lt;/&gt; Code</button>
+                            <button type="button" onclick="studentHelpVoice()" title="Use voice input">◉ Voice</button>
+                        </div>
+                        <button type="button" class="student-primary-ask" onclick="studentHelpAsk()">Ask BUGOUT <span>↗</span></button>
+                    </div>
+                </div>
+
+                <div class="student-quick-grid" aria-label="Quick student help actions">
+                    <button class="student-quick-card tutor" onclick="studentHelpTutor()">
+                        <span class="student-card-index">01</span><b>AI Tutor</b><small>Understand anything, step by step.</small><em>Start learning ↗</em>
                     </button>
-                    <button class="onboarding-btn onboarding-btn-secondary" onclick="onboarding.skipTour()">
-                        ⏭️ Skip Tour
+                    <button class="student-quick-card code" onclick="studentHelpCode()">
+                        <span class="student-card-index">02</span><b>Coding Help</b><small>Debug, explain and practice code.</small><em>Open code lab ↗</em>
+                    </button>
+                    <button class="student-quick-card exam" onclick="studentHelpPreset('I have an exam coming up. Help me revise efficiently. Start by asking me the subject and syllabus.')">
+                        <span class="student-card-index">03</span><b>Exam Prep</b><small>Revision, notes and quick quizzes.</small><em>Prepare now ↗</em>
+                    </button>
+                    <button class="student-quick-card assignment" onclick="studentHelpPreset('Help me with an assignment. Guide me to understand and complete it properly without blindly doing the work for me.')">
+                        <span class="student-card-index">04</span><b>Assignment Help</b><small>Understand, plan and improve your work.</small><em>Get guidance ↗</em>
+                    </button>
+                    <button class="student-quick-card community" onclick="studentHelpCommunity()">
+                        <span class="student-card-index">05</span><b>Community</b><small>Ask real students and help others.</small><em>See questions ↘</em>
                     </button>
                 </div>
-            </div>
+            </section>
+
+            <section class="student-dashboard-grid">
+                <article class="student-panel continue-panel">
+                    <div class="student-panel-head"><span>CONTINUE</span><i>SYNCED</i></div>
+                    <h2 id="studentContinueTitle">Your AI Tutor is ready.</h2>
+                    <p id="studentContinueCopy">Continue your latest topic or start a fresh doubt without setting up a complicated learning system.</p>
+                    <button onclick="studentHelpTutor()">Continue with AI Tutor <span>→</span></button>
+                </article>
+                <article class="student-panel activity-panel">
+                    <div class="student-panel-head"><span>YOUR ACTIVITY</span><i>LIVE</i></div>
+                    <div class="student-mini-stats">
+                        <div><strong id="studentStatQuestions">—</strong><span>Questions</span></div>
+                        <div><strong id="studentStatAnswers">—</strong><span>Answers</span></div>
+                        <div><strong id="studentStatPoints">0</strong><span>Help Points</span></div>
+                    </div>
+                </article>
+                <article class="student-panel tip-panel">
+                    <div class="student-panel-head"><span>QUICK TIP</span><i>BUGOUT</i></div>
+                    <p id="studentQuickTip">Upload your notes or a screenshot directly to AI Tutor when a topic is hard to explain in words.</p>
+                    <button onclick="studentHelpUpload()">Upload study material</button>
+                </article>
+            </section>
         `;
 
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-        this.isOnboarding = true;
+        if (community) root.insertBefore(dashboard, community);
+        else root.prepend(dashboard);
+
+        this.refreshDashboardStats();
     }
 
-    createOverlay() {
-        const overlay = document.createElement('div');
-        overlay.className = 'onboarding-overlay show';
-        overlay.onclick = (e) => {
-            if (e.target === overlay) this.closeOnboarding();
-        };
-        return overlay;
-    }
+    simplifyTutor() {
+        const tutor = document.getElementById('teacherPage');
+        if (!tutor) return;
+        tutor.classList.add('student-tutor-page');
 
-    createModal() {
-        const modal = document.createElement('div');
-        modal.className = 'onboarding-modal';
-        return modal;
-    }
+        const label = tutor.querySelector('#teacherEntryScreen .teacher-system-label');
+        if (label) label.textContent = 'BUGOUT AI TUTOR';
+        const title = tutor.querySelector('#teacherEntryScreen h2');
+        if (title) title.textContent = 'What do you want help with?';
+        const copy = tutor.querySelector('#teacherEntryScreen .teacher-entry-copy p');
+        if (copy) copy.textContent = 'Ask a doubt, paste a topic, or upload study material. BUGOUT will explain it in the simplest useful way.';
+        const input = document.getElementById('teacherStruggleInput');
+        if (input) input.placeholder = 'Type a topic or question — e.g. recursion, differentiation, DBMS joins...';
+        const start = document.getElementById('teacherStartBtn');
+        if (start) start.textContent = 'Get help';
 
-    startTour() {
-        this.currentStep = 0;
-        this.showStep();
-    }
-
-    showStep() {
-        const overlay = document.querySelector('.onboarding-overlay');
-        const modal = document.querySelector('.onboarding-modal');
-        
-        if (!overlay || !modal) {
-            this.showWelcome();
-            return;
-        }
-
-        const steps = [
-            {
-                title: "🏠 Home Base",
-                content: `
-                    <p>This is your home dashboard where you'll see all the latest bugs and problems from the community.</p>
-                    <div class="onboarding-features">
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">📊</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Live Stats</h4>
-                                <p>Track bugs posted, solutions provided, and active warriors in real-time</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🔍</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Smart Search</h4>
-                                <p>Find exactly what you're looking for with our intelligent search system</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🏷️</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Smart Filters</h4>
-                                <p>Filter by category, status, or sort by various criteria</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="onboarding-demo">
-                        <p><strong>💡 Pro Tip:</strong> Use the search bar to find specific problems or browse through categories!</p>
-                    </div>
-                `,
-                highlight: '.bugs-grid'
-            },
-            {
-                title: "📝 Post Your First Bug",
-                content: `
-                    <p>Got a problem? Share it with the community!</p>
-                    <div class="onboarding-features">
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🐛</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Clear Title</h4>
-                                <p>Describe your issue clearly in the title</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">📝</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Detailed Description</h4>
-                                <p>Provide context, error messages, and what you've tried</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🏷️</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Right Category</h4>
-                                <p>Choose the right category to reach the right experts</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="onboarding-demo">
-                        <p><strong>💡 Pro Tip:</strong> Include code snippets, error messages, and screenshots for better solutions!</p>
-                    </div>
-                `,
-                highlight: '#postBtn'
-            },
-            {
-                title: "🧠 AI Mentor - Your Personal Guide",
-                content: `
-                    <p>Meet your AI mentor - available 24/7 to help with coding, career, and life problems!</p>
-                    <div class="onboarding-features">
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">💬</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Natural Chat</h4>
-                                <p>Talk naturally - ask anything, get instant help</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🎯</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Context-Aware</h4>
-                                <p>Understands your background and provides personalized advice</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">📚</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Learning Resources</h4>
-                                <p>Gets suggestions based on your conversation history</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="onboarding-demo">
-                        <p><strong>💡 Pro Tip:</strong> Try asking about DSA concepts, resume tips, or debugging help!</p>
-                    </div>
-                `,
-                highlight: '#mentorNavBtn'
-            },
-            {
-                title: "🎓 AI Teacher - Structured Learning",
-                content: `
-                    <p>Your personal AI teacher for comprehensive learning paths and structured education!</p>
-                    <div class="onboarding-features">
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🗺️</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Personalized Roadmaps</h4>
-                                <p>Get custom learning paths based on your goals</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">📝</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Interactive Lessons</h4>
-                                <p>Learn with examples, practice, and quizzes</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">📊</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Progress Tracking</h4>
-                                <p>Monitor your learning journey and achievements</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="onboarding-demo">
-                        <p><strong>💡 Pro Tip:</strong> Start with a placement test to get personalized recommendations!</p>
-                    </div>
-                `,
-                highlight: '#teacherNavBtn'
-            },
-            {
-                title: "⚔️ Arena - Competitive Coding",
-                content: `
-                    <p>Challenge yourself and compete with other developers in real-time coding battles!</p>
-                    <div class="onboarding-features">
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">⚡</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Real-time Battles</h4>
-                                <p>Solve problems head-to-head with other coders</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🏆</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Leaderboards</h4>
-                                <p>Climb ranks and earn recognition</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">💰</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Earn Rewards</h4>
-                                <p>Win XP, badges, and unlock new features</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="onboarding-demo">
-                        <p><strong>💡 Pro Tip:</strong> Practice in different difficulty levels to improve your skills!</p>
-                    </div>
-                `,
-                highlight: '#arenaNavBtn'
-            },
-            {
-                title: "🔍 AI Code Analyzer",
-                content: `
-                    <p>Get instant analysis and suggestions for your code with our AI-powered analyzer!</p>
-                    <div class="onboarding-features">
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🔍</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Code Review</h4>
-                                <p>Get detailed analysis of code quality and issues</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🐛</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Bug Detection</h4>
-                                <p>Identify potential bugs before they cause problems</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">💡</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Optimization Tips</h4>
-                                <p>Get suggestions for better performance</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="onboarding-demo">
-                        <p><strong>💡 Pro Tip:</strong> Paste your code and get instant feedback on improvements!</p>
-                    </div>
-                `,
-                highlight: '#analyzerNavBtn'
-            },
-            {
-                title: "🤝 Collaboration - Team Work",
-                content: `
-                    <p>Work together with other developers on projects and problems!</p>
-                    <div class="onboarding-features">
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">👥</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Team Projects</h4>
-                                <p>Collaborate on coding projects in real-time</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">💬</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Shared Workspaces</h4>
-                                <p>Create dedicated spaces for your teams</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">📋</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Task Management</h4>
-                                <p>Organize work and track progress together</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="onboarding-demo">
-                        <p><strong>💡 Pro Tip:</strong> Invite team members and start collaborating on shared projects!</p>
-                    </div>
-                `,
-                highlight: '#collabNavBtn'
-            },
-            {
-                title: "🎯 You're All Set!",
-                content: `
-                    <p>Congratulations! You're now ready to make the most of BUGOUT!</p>
-                    <div class="onboarding-features">
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🐛</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Post Problems</h4>
-                                <p>Share your coding and life challenges</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">💡</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Solve Issues</h4>
-                                <p>Help others and build your reputation</p>
-                            </div>
-                        </div>
-                        <div class="onboarding-feature">
-                            <div class="onboarding-feature-icon">🏆</div>
-                            <div class="onboarding-feature-content">
-                                <h4>Earn Rewards</h4>
-                                <p>Get XP, badges, and recognition</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="onboarding-demo">
-                        <p><strong>🎉 Welcome to the community!</strong> Start exploring and happy problem-solving!</p>
-                    </div>
-                `,
-                highlight: null
-            }
+        const examples = document.querySelectorAll('#teacherExampleRow button');
+        const presets = [
+            ['Teach me from zero', 'Teach me this topic from zero, using simple language and examples.'],
+            ['Explain simply', 'Explain this topic in very simple words with one clear example.'],
+            ['Exam revision', 'Help me revise this topic for an exam with key points and likely questions.'],
+            ['Quiz me', 'Quiz me on this topic one question at a time and explain my mistakes.'],
+            ['Check my answer', 'I will give you my answer. Check it, explain mistakes, and show how to improve it.']
         ];
+        examples.forEach((button, index) => {
+            if (!presets[index]) return;
+            button.textContent = presets[index][0];
+            button.onclick = () => this.prefillTutor(presets[index][1]);
+        });
 
-        const step = steps[this.currentStep];
-        
-        modal.innerHTML = `
-            <div class="onboarding-header">
-                <h2 class="onboarding-title">${step.title}</h2>
-                <button class="onboarding-close" onclick="onboarding.closeOnboarding()">✕</button>
-            </div>
-            <div class="onboarding-content">
-                <div class="onboarding-step active">
-                    <h3><span class="step-number">${this.currentStep + 1}</span> ${step.title}</h3>
-                    ${step.content}
-                </div>
-            </div>
-            <div class="onboarding-progress">
-                <div class="onboarding-dots">
-                    ${Array.from({length: this.totalSteps}, (_, i) => 
-                        `<div class="onboarding-dot ${i === this.currentStep ? 'active' : i < this.currentStep ? 'completed' : ''}"></div>`
-                    ).join('')}
-                </div>
-                <span style="color: var(--text2); font-size: 0.85rem;">
-                    Step ${this.currentStep + 1} of ${this.totalSteps}
-                </span>
-            </div>
-            <div class="onboarding-actions">
-                <button class="onboarding-skip" onclick="onboarding.skipTour()">Skip Tour</button>
-                <div>
-                    ${this.currentStep > 0 ? 
-                        `<button class="onboarding-btn onboarding-btn-secondary" onclick="onboarding.previousStep()">
-                            ← Previous
-                        </button>` : ''
-                    }
-                    <button class="onboarding-btn" onclick="onboarding.nextStep()">
-                        ${this.currentStep === this.totalSteps - 1 ? '🎉 Get Started' : 'Next →'}
-                    </button>
-                </div>
-            </div>
-        `;
+        const diagnosticLabel = tutor.querySelector('#teacherDiagnosticScreen .teacher-system-label');
+        if (diagnosticLabel) diagnosticLabel.textContent = 'QUICK CHECK';
+        const diagnosticTitle = document.getElementById('teacherDiagnosticTitle');
+        if (diagnosticTitle) diagnosticTitle.textContent = 'A few quick questions so I can explain it better';
 
-        // Highlight element if specified
-        if (step.highlight) {
-            this.highlightElement(step.highlight);
+        tutor.querySelectorAll('.teacher-agent-stack, .teacher-intelligence-rail').forEach(el => el.classList.add('student-complexity-hidden'));
+        const boss = [...tutor.querySelectorAll('.teacher-session-actions button')].find(btn => /boss battle/i.test(btn.textContent || ''));
+        if (boss) boss.style.display = 'none';
+    }
+
+    simplifyCoding() {
+        const arena = document.getElementById('arenaPage');
+        if (arena) {
+            arena.classList.add('student-code-page');
+            const kicker = arena.querySelector('.os-kicker');
+            if (kicker) kicker.textContent = 'BUGOUT // CODING HELP';
+            const title = arena.querySelector('.arena-head h2');
+            if (title) title.textContent = 'Code Lab';
+            const copy = arena.querySelector('.arena-head p');
+            if (copy) copy.textContent = 'Debug code, understand errors, and practice with focused problems — without the noise.';
+            const buttons = arena.querySelectorAll('.pillar-capability-strip button');
+            if (buttons[0]) buttons[0].textContent = 'Debug / Analyze Code';
+            if (buttons[1]) buttons[1].textContent = 'Ask AI Tutor';
+            if (buttons[2]) buttons[2].style.display = 'none';
+            const boardTitle = arena.querySelector('.arena-board h3');
+            if (boardTitle) boardTitle.textContent = 'Practice Leaderboard';
+        }
+
+        const analyzer = document.getElementById('analyzerPage');
+        if (analyzer) {
+            analyzer.classList.add('student-code-page');
+            const title = analyzer.querySelector('h2');
+            if (title) title.textContent = 'Code Debugger';
+            const copy = analyzer.querySelector('h2 + p');
+            if (copy) copy.textContent = 'Paste your code. BUGOUT will find the problem, explain it clearly, and show you how to fix it.';
         }
     }
 
-    highlightElement(selector) {
-        // Remove previous highlights
-        document.querySelectorAll('.tour-highlight').forEach(el => {
-            el.classList.remove('tour-highlight');
-        });
+    simplifyCommunity() {
+        const community = document.getElementById('communityExchange');
+        if (!community) return;
+        community.classList.add('student-community-exchange');
+        const kicker = community.querySelector('.os-kicker');
+        if (kicker) kicker.textContent = 'STUDENT COMMUNITY';
+        const heading = community.querySelector('.community-head h2');
+        if (heading) heading.textContent = 'Ask students. Share answers. Get unstuck together.';
+        const copy = community.querySelector('.community-head p');
+        if (copy) copy.textContent = 'Post a question when you want a human perspective, or help someone else with something you already understand.';
+        const button = community.querySelector('.community-head .btn');
+        if (button) button.textContent = 'Ask Community';
 
-        if (selector) {
-            const element = document.querySelector(selector);
-            if (element) {
-                element.classList.add('tour-highlight');
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const postPage = document.getElementById('postPage');
+        const postTitle = postPage?.querySelector('h2');
+        if (postTitle) postTitle.textContent = 'Ask the Community';
+        const bugTitle = document.getElementById('bugTitle');
+        if (bugTitle) bugTitle.placeholder = 'What do you need help with?';
+        const bugDesc = document.getElementById('bugDesc');
+        if (bugDesc) bugDesc.placeholder = 'Explain the problem clearly. Add context, what you tried, and where you got stuck...';
+    }
+
+    watchUserState() {
+        const observer = new MutationObserver(() => this.refreshDashboardStats());
+        ['userName', 'userXP', 'statBugs', 'statSolutions'].forEach(id => {
+            const node = document.getElementById(id);
+            if (node) observer.observe(node, { childList: true, subtree: true, characterData: true });
+        });
+        setTimeout(() => this.refreshDashboardStats(), 900);
+        setTimeout(() => this.refreshDashboardStats(), 2200);
+    }
+
+    refreshDashboardStats() {
+        const userName = (document.getElementById('userName')?.textContent || '').trim();
+        const greeting = document.getElementById('studentGreeting');
+        if (greeting) greeting.textContent = userName ? `HEY, ${userName.toUpperCase()}.` : 'HEY, STUDENT.';
+
+        const bugCount = document.getElementById('statBugs')?.textContent || '—';
+        const solutionCount = document.getElementById('statSolutions')?.textContent || '—';
+        const xpText = document.getElementById('userXP')?.textContent || '0 XP';
+        const xp = (xpText.match(/\d[\d,]*/) || ['0'])[0];
+        this.setText('studentStatQuestions', bugCount);
+        this.setText('studentStatAnswers', solutionCount);
+        this.setText('studentStatPoints', xp);
+    }
+
+    setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+
+    bindKeyboardShortcuts() {
+        document.addEventListener('keydown', event => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                if (typeof window.goHome === 'function') window.goHome();
+                setTimeout(() => document.getElementById('studentHelpAskInput')?.focus(), 80);
             }
-        }
-    }
-
-    nextStep() {
-        if (this.currentStep < this.totalSteps - 1) {
-            this.currentStep++;
-            this.showStep();
-        } else {
-            this.completeOnboarding();
-        }
-    }
-
-    previousStep() {
-        if (this.currentStep > 0) {
-            this.currentStep--;
-            this.showStep();
-        }
-    }
-
-    skipTour() {
-        if (confirm('Are you sure you want to skip the tour? You can always access it later from the help menu.')) {
-            this.completeOnboarding();
-        }
-    }
-
-    completeOnboarding() {
-        this.userProgress.completed = true;
-        this.userProgress.completedAt = new Date().toISOString();
-        localStorage.setItem('bugout_onboarding', JSON.stringify(this.userProgress));
-        this.closeOnboarding();
-        
-        // Show success message
-        setTimeout(() => {
-            this.showNotification('🎉 Welcome to BUGOUT! You\'re all set to start solving problems!');
-        }, 300);
-    }
-
-    closeOnboarding() {
-        const overlay = document.querySelector('.onboarding-overlay');
-        if (overlay) {
-            overlay.remove();
-        }
-        
-        // Remove highlights
-        document.querySelectorAll('.tour-highlight').forEach(el => {
-            el.classList.remove('tour-highlight');
         });
-        
-        this.isOnboarding = false;
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && document.activeElement?.id === 'studentHelpAskInput') {
+                window.studentHelpAsk();
+            }
+        });
     }
 
-    showNotification(message) {
-        const notification = document.createElement('div');
-        notification.className = 'toast ok';
-        notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--card);
-            border: 1px solid var(--accent);
-            border-radius: 10px;
-            padding: 12px 20px;
-            font-size: 0.9rem;
-            z-index: 9999;
-            animation: slideUp 0.3s ease;
-            max-width: 300px;
-        `;
-        
-        document.body.appendChild(notification);
-        
+    openTutor() {
+        if (typeof window.goTeacher === 'function') window.goTeacher();
+    }
+
+    prefillTutor(text) {
+        this.openTutor();
         setTimeout(() => {
-            notification.remove();
-        }, 5000);
+            const entry = document.getElementById('teacherStruggleInput');
+            const doubt = document.getElementById('teacherDoubtInput');
+            if (entry && !entry.closest('[hidden]')) {
+                entry.value = text;
+                entry.focus();
+                entry.dispatchEvent(new Event('input', { bubbles: true }));
+            } else if (doubt) {
+                doubt.value = text;
+                doubt.focus();
+                doubt.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }, 100);
     }
 
-    // Method to restart onboarding
-    restart() {
-        this.userProgress = {};
-        localStorage.removeItem('bugout_onboarding');
-        this.showWelcome();
-    }
-
-    // Method to show help
-    showHelp() {
-        const helpContent = `
-            <h3>🐛 BUGOUT Help Center</h3>
-            <div class="onboarding-features">
-                <div class="onboarding-feature">
-                    <div class="onboarding-feature-icon">🔄</div>
-                    <div class="onboarding-feature-content">
-                        <h4>Restart Tour</h4>
-                        <p>Take the interactive tour again</p>
-                    </div>
-                </div>
-                <div class="onboarding-feature">
-                    <div class="onboarding-feature-icon">📚</div>
-                    <div class="onboarding-feature-content">
-                        <h4>Documentation</h4>
-                        <p>Read detailed guides and tutorials</p>
-                    </div>
-                </div>
-                <div class="onboarding-feature">
-                    <div class="onboarding-feature-icon">💬</div>
-                    <div class="onboarding-feature-content">
-                        <h4>Community Support</h4>
-                        <p>Get help from experienced users</p>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const overlay = this.createOverlay();
-        const modal = this.createModal();
-        
-        modal.innerHTML = `
-            <div class="onboarding-header">
-                <h2 class="onboarding-title">Help & Support</h2>
-                <button class="onboarding-close" onclick="onboarding.closeOnboarding()">✕</button>
-            </div>
-            <div class="onboarding-content">
-                ${helpContent}
-            </div>
-            <div class="onboarding-actions">
-                <button class="onboarding-btn" onclick="onboarding.restart()">
-                    🔄 Restart Tour
-                </button>
-                <button class="onboarding-btn onboarding-btn-secondary" onclick="onboarding.closeOnboarding()">
-                    Close
-                </button>
-            </div>
-        `;
-
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
+    openCommunity() {
+        if (typeof window.goHome === 'function') window.goHome();
+        setTimeout(() => {
+            document.getElementById('communityExchange')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     }
 }
 
-// Initialize onboarding system
-let onboarding;
-
 document.addEventListener('DOMContentLoaded', () => {
-    onboarding = new OnboardingSystem();
-    
-    // Add help button to navigation if it doesn't exist
-    if (!document.querySelector('#helpBtn')) {
-        const helpBtn = document.createElement('button');
-        helpBtn.id = 'helpBtn';
-        helpBtn.className = 'btn btn-sm btn-ghost';
-        helpBtn.innerHTML = '❓ Help';
-        helpBtn.onclick = () => onboarding.showHelp();
-        helpBtn.style.cssText = 'display: inline-flex;';
-        
-        const navRight = document.querySelector('.nav-right');
-        if (navRight) {
-            navRight.appendChild(helpBtn);
-        }
-    }
+    window.studentHelpExperience = new StudentHelpExperience();
 });
 
-// Global function for manual tour restart
-window.restartOnboarding = () => {
-    if (onboarding) {
-        onboarding.restart();
+window.studentHelpAsk = () => {
+    const input = document.getElementById('studentHelpAskInput');
+    const text = (input?.value || '').trim();
+    if (!text) {
+        input?.focus();
+        input?.classList.add('student-input-nudge');
+        setTimeout(() => input?.classList.remove('student-input-nudge'), 450);
+        return;
     }
+    window.studentHelpExperience?.prefillTutor(text);
+};
+
+window.studentHelpTutor = () => window.studentHelpExperience?.openTutor();
+window.studentHelpCommunity = () => window.studentHelpExperience?.openCommunity();
+window.studentHelpPreset = text => window.studentHelpExperience?.prefillTutor(text);
+
+window.studentHelpCode = () => {
+    if (typeof window.goArena === 'function') window.goArena();
+};
+
+window.studentHelpUpload = () => {
+    window.studentHelpExperience?.openTutor();
+    setTimeout(() => {
+        const picker = document.getElementById('teacherMaterialInput');
+        if (picker) picker.click();
+        else if (typeof window.openTeacherMaterialPicker === 'function') window.openTeacherMaterialPicker();
+    }, 150);
+};
+
+window.studentHelpVoice = () => {
+    window.studentHelpExperience?.openTutor();
+    setTimeout(() => {
+        if (typeof window.startTeacherVoiceInput === 'function') window.startTeacherVoiceInput();
+        else document.getElementById('teacherDoubtInput')?.focus();
+    }, 150);
 };
