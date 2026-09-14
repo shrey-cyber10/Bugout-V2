@@ -1,10 +1,20 @@
-// Epic Loading Screen System for BUGOUT
+// BUGOUT cyber-glitch loading screen
 class LoadingScreen {
     constructor() {
         this.isLoading = false;
-        this.minLoadTime = 3000; // Minimum 3 seconds for epic experience
         this.startTime = Date.now();
+        this.minLoadTime = this.getLoadDuration();
         this.init();
+    }
+
+    getLoadDuration() {
+        try {
+            const seen = sessionStorage.getItem('bugout_seen_loader');
+            sessionStorage.setItem('bugout_seen_loader', '1');
+            return seen ? 1450 : 2600;
+        } catch (_) {
+            return 2200;
+        }
     }
 
     init() {
@@ -14,218 +24,128 @@ class LoadingScreen {
     }
 
     createLoadingScreen() {
+        const old = document.getElementById('loadingScreen');
+        if (old) old.remove();
+
         const screen = document.createElement('div');
-        screen.className = 'loading-screen';
+        screen.className = 'loading-screen cyber-loader';
         screen.id = 'loadingScreen';
-        
         screen.innerHTML = `
-            <div class="loading-bg"></div>
-            
-            <!-- Particle System -->
-            <div class="particles" id="particles"></div>
-            
-            <!-- Floating Elements -->
-            <div class="floating-elements">
-                <div class="floating-element">⚔️</div>
-                <div class="floating-element">🛠️</div>
-                <div class="floating-element">🧠</div>
-                <div class="floating-element">🎯</div>
-                <div class="floating-element">🚀</div>
-            </div>
-            
-            <!-- Matrix Rain Effect -->
-            <div class="matrix-rain" id="matrixRain"></div>
-            
-            <!-- Main Logo -->
-            <div class="loading-logo">
-                <div class="loading-logo-icon"></div>
-            </div>
-            
-            <!-- Welcome Text -->
-            <div class="loading-text">
-                <h1 class="loading-title">Welcome to BUGOUT</h1>
-                <p class="loading-subtitle">
-                    by <span class="highlight">MindForgers</span><br>
-                    Where <span class="highlight">Warriors Help Warriors</span><br>
-                    and <span class="highlight">Sharpen Their Blades</span>
-                </p>
-            </div>
-            
-            <!-- Loading Progress -->
-            <div class="loading-progress">
-                <div class="loading-progress-bar" id="progressBar"></div>
-            </div>
-            
-            <!-- Glitch Effect -->
-            <div class="loading-glitch" id="glitchEffect"></div>
+            <div class="cyber-loader-bg" aria-hidden="true"></div>
+            <div class="cyber-grid" aria-hidden="true"></div>
+            <div class="cyber-noise" aria-hidden="true"></div>
+            <div class="cyber-scanline" aria-hidden="true"></div>
+            <div class="cyber-slices" id="cyberSlices" aria-hidden="true"></div>
+
+            <main class="cyber-loader-core" aria-label="BUGOUT loading">
+                <div class="cyber-status-row">
+                    <span>STUDENT HELP NETWORK</span>
+                    <span class="cyber-online"><i></i> LINK ACTIVE</span>
+                </div>
+
+                <div class="bugout-script-wrap">
+                    <div class="bugout-script" data-text="BUGOUT">BUGOUT</div>
+                    <div class="bugout-script-shadow" aria-hidden="true">BUGOUT</div>
+                </div>
+
+                <div class="cyber-loader-tagline">GET UNSTUCK. LEARN BETTER.</div>
+
+                <div class="cyber-boot" aria-live="polite">
+                    <span id="cyberBootLine">INITIALIZING STUDENT HELP...</span>
+                </div>
+
+                <div class="cyber-progress" aria-hidden="true">
+                    <span id="progressBar"></span>
+                </div>
+            </main>
+
+            <div class="cyber-corner cyber-corner-a">BG//01</div>
+            <div class="cyber-corner cyber-corner-b">MIND FORGERS</div>
         `;
 
         document.body.appendChild(screen);
         this.isLoading = true;
-        
-        // Create particles
-        this.createParticles();
-        
-        // Create matrix rain
-        this.createMatrixRain();
+        this.screen = screen;
+        this.createSlices();
     }
 
-    createParticles() {
-        const particlesContainer = document.getElementById('particles');
-        const particleCount = 50;
-        
-        for (let i = 0; i < particleCount; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.animationDelay = Math.random() * 6 + 's';
-            particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
-            particlesContainer.appendChild(particle);
-        }
-    }
-
-    createMatrixRain() {
-        const matrixContainer = document.getElementById('matrixRain');
-        const columnCount = Math.floor(window.innerWidth / 20);
-        
-        for (let i = 0; i < columnCount; i++) {
-            const column = document.createElement('div');
-            column.className = 'matrix-column';
-            column.style.left = i * 20 + 'px';
-            column.style.animationDuration = (Math.random() * 5 + 5) + 's';
-            column.style.animationDelay = Math.random() * 5 + 's';
-            
-            // Random characters
-            const characters = '01BUGOUT';
-            let text = '';
-            for (let j = 0; j < 20; j++) {
-                text += characters[Math.floor(Math.random() * characters.length)];
-            }
-            column.textContent = text;
-            
-            matrixContainer.appendChild(column);
+    createSlices() {
+        const host = document.getElementById('cyberSlices');
+        if (!host) return;
+        for (let i = 0; i < 12; i++) {
+            const slice = document.createElement('span');
+            slice.style.top = `${Math.random() * 100}%`;
+            slice.style.width = `${10 + Math.random() * 55}%`;
+            slice.style.left = `${Math.random() * 75}%`;
+            slice.style.animationDelay = `${Math.random() * 1.2}s`;
+            host.appendChild(slice);
         }
     }
 
     startAnimations() {
-        // Trigger random glitch effects
+        const bootLines = [
+            'INITIALIZING STUDENT HELP...',
+            'AI TUTOR // ONLINE',
+            'CODE HELPER // READY',
+            'COMMUNITY LINK // READY',
+            'BUGOUT // READY'
+        ];
+        let index = 0;
+        const boot = document.getElementById('cyberBootLine');
+        this.bootInterval = setInterval(() => {
+            index = Math.min(index + 1, bootLines.length - 1);
+            if (boot) {
+                boot.classList.remove('swap');
+                void boot.offsetWidth;
+                boot.textContent = bootLines[index];
+                boot.classList.add('swap');
+            }
+        }, 430);
+
         this.glitchInterval = setInterval(() => {
-            if (Math.random() > 0.7) {
-                this.triggerGlitch();
-            }
-        }, 2000);
-
-        // Dynamic particle generation
-        this.particleInterval = setInterval(() => {
-            if (this.isLoading && Math.random() > 0.5) {
-                this.addRandomParticle();
-            }
-        }, 500);
-    }
-
-    triggerGlitch() {
-        const glitch = document.getElementById('glitchEffect');
-        glitch.style.animation = 'none';
-        setTimeout(() => {
-            glitch.style.animation = 'glitchEffect 0.3s ease-in-out';
-        }, 10);
-    }
-
-    addRandomParticle() {
-        const particlesContainer = document.getElementById('particles');
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
-        particlesContainer.appendChild(particle);
-        
-        // Remove old particles to prevent memory issues
-        if (particlesContainer.children.length > 100) {
-            particlesContainer.removeChild(particlesContainer.firstChild);
-        }
+            if (!this.screen) return;
+            this.screen.classList.add('hard-glitch');
+            setTimeout(() => this.screen?.classList.remove('hard-glitch'), 110);
+        }, 720);
     }
 
     scheduleHide() {
         const elapsed = Date.now() - this.startTime;
-        const remainingTime = Math.max(0, this.minLoadTime - elapsed);
-        
-        setTimeout(() => {
-            this.hide();
-        }, remainingTime);
+        setTimeout(() => this.hide(), Math.max(0, this.minLoadTime - elapsed));
     }
 
     hide() {
         const screen = document.getElementById('loadingScreen');
-        if (screen) {
-            screen.classList.add('hide');
-            
-            // Clean up intervals
-            if (this.glitchInterval) {
-                clearInterval(this.glitchInterval);
-            }
-            if (this.particleInterval) {
-                clearInterval(this.particleInterval);
-            }
-            
-            // Remove screen after animation
-            setTimeout(() => {
-                screen.remove();
-                this.isLoading = false;
-                
-                // Trigger onboarding if needed
-                if (window.onboarding && !window.onboarding.userProgress.completed) {
-                    setTimeout(() => {
-                        window.onboarding.showWelcome();
-                    }, 500);
-                }
-            }, 800);
-        }
+        if (!screen || !this.isLoading) return;
+        clearInterval(this.bootInterval);
+        clearInterval(this.glitchInterval);
+        screen.classList.add('hide');
+        setTimeout(() => {
+            screen.remove();
+            this.isLoading = false;
+        }, 620);
     }
 
-    // Method to show loading screen manually
     show() {
-        if (!this.isLoading) {
-            this.startTime = Date.now();
-            this.init();
-        }
+        if (this.isLoading) return;
+        this.startTime = Date.now();
+        this.minLoadTime = 1350;
+        this.init();
     }
 
-    // Method to force hide
     forceHide() {
         this.minLoadTime = 0;
         this.hide();
     }
 }
 
-// Initialize loading screen
 let loadingScreen;
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Show loading screen immediately
     loadingScreen = new LoadingScreen();
-    
-    // Hide loading screen when page is fully loaded
-    window.addEventListener('load', () => {
-        // Loading screen will auto-hide after minimum time
-    });
-    
-    // Emergency hide option
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && loadingScreen && loadingScreen.isLoading) {
-            loadingScreen.forceHide();
-        }
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && loadingScreen?.isLoading) loadingScreen.forceHide();
     });
 });
 
-// Global function to manually show/hide loading screen
-window.showLoadingScreen = () => {
-    if (loadingScreen) {
-        loadingScreen.show();
-    }
-};
-
-window.hideLoadingScreen = () => {
-    if (loadingScreen) {
-        loadingScreen.forceHide();
-    }
-};
+window.showLoadingScreen = () => loadingScreen?.show();
+window.hideLoadingScreen = () => loadingScreen?.forceHide();
